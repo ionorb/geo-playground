@@ -1,0 +1,21 @@
+services:
+  vite-app:
+    image: node:20-alpine  # Using Node.js version 20 for better ES module support
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "5173:5173"
+    # environment:
+    #   - NODE_ENV=development
+    command: sh -c "npm install && npm run dev"
+    stdin_open: true
+    tty: true
+
+  tileserver-gl:
+    image: maptiler/tileserver-gl
+    volumes:
+      - .:/data
+    ports:
+      - "8080:8080"
+    command: --config /data/tileserver.json
