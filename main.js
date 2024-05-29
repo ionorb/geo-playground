@@ -176,7 +176,7 @@ var map = new maplibregl.Map({
 var leafletMap = L.map('leaflet-map').setView([51.505, -0.09], 13);
 
 // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-L.tileLayer('http://localhost:3001/styles/fancy/{z}/{x}/{y}.png', {
+L.tileLayer('http://localhost:3001/styles/michelin/{z}/{x}/{y}.png', {
 	maxZoom: 19,
 	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(leafletMap);

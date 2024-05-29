@@ -3,15 +3,27 @@ const axios = require('axios');
 const app = express();
 const port = 3001;
 
-// Function to determine longitude, latitude, zoom, width, and height
+// conversion functions from openstreetmap wiki page:
+function tile2long(x,z) {
+	console.log(x, z);
+	return (x/Math.pow(2,z)*360-180);
+}
+
+function tile2lat(y,z) {
+	console.log(y, z);
+	var n=Math.PI-2*Math.PI*y/Math.pow(2,z);
+	return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
+}
+
 function determineParameters(z, x, y) {
-	// Placeholder function: implement logic to convert (z, x, y) to (lon, lat, zoom, width, height)
-	return { lon: -74.0060, lat: 40.7128, zoom: z, width: 512, height: 512 };
+	return { lon: tile2long(parseFloat(x)+0.5,z), lat: tile2lat(parseFloat(y)+0.5,z), zoom: z, width: 512, height: 512 };
 }
 
 app.get('/styles/:id/:z/:x/:y.png', async (req, res) => {
 	const { id, z, x, y } = req.params;
 	const { lon, lat, zoom, width, height } = determineParameters(z, x, y);
+
+	console.log(lat, lon);
 
 	try {
 		const format = 'png';
