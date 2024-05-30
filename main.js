@@ -74,7 +74,7 @@ var michelinRasterStyle = {
 		"michelinRaster": {
 			"type": "raster",
 			"tiles": [
-				"http://localhost:8080/styles/michelin/{z}/{x}/{y}.png"
+				"http://localhost:8080/styles/michelin/{z}/{x}/{y}@2x.png"
 			],
 			"tileSize": 256
 		}
@@ -169,17 +169,19 @@ leafletContainer.style.height = '500px';//window.innerHeight - 50 + 'px';
 var map = new maplibregl.Map({
 	container: 'map', // container id
 	style: basicStyle, // style URL
-	center: [0, 0], // starting position [lng, lat]
-	zoom: 1 // starting zoom
+	center: [2.609167, 48.811111], // starting position [lng, lat]
+	zoom: 10 // starting zoom
 });
 
-var leafletMap = L.map('leaflet-map').setView([51.505, -0.09], 13);
+map.showTileBoundaries = true;
 
-// L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-L.tileLayer('http://localhost:3001/styles/michelin/{z}/{x}/{y}.png', {
-	maxZoom: 19,
-	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-}).addTo(leafletMap);
+// var leafletMap = L.map('leaflet-map').setView([51.505, -0.09], 13);
+
+// // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+// L.tileLayer('http://localhost:8080/styles/michelin/{z}/{x}/{y}.png', {
+// 	maxZoom: 19,
+// 	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+// }).addTo(leafletMap);
 
 // map.on('load', function() {
 // 	map.addSource('world-cities', {

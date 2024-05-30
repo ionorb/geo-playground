@@ -17,12 +17,12 @@
 	  "maxScaleFactor": 3,
 	  "maxSize": 2048,
 	  "pbfAlias": "pbf",
-	  "serveAllFonts": false,
-	  "serveAllStyles": false,
+	  "serveAllFonts": true,
+	  "serveAllStyles": true,
 	  "serveStaticMaps": true,
 	  "allowRemoteMarkerIcons": true,
 	  "allowInlineMarkerImages": true,
-	  "tileMargin": 0
+	  "tileMargin": 256
 	},
 	"styles": {
 	  "fancy": {
