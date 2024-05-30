@@ -54,6 +54,8 @@ async function fetchImage(url, outputPath, cropOptions) {
 
 // fetchAndCropImage('http://example.com/image.jpg', 'cropped.jpg', { left: 50, top: 50, width: 200, height: 200 });
 
+const imgHashMap = {}; // key: x-y, value: imageBuffer - to store the cropped images
+
 app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
 	let { id, tilesize, extra, z, x, y } = req.params;
 	tilesize = parseInt(tilesize);
@@ -70,20 +72,22 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
 	try {
 		const format = 'png';
 		const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
-		const fullImage = await fetchImage(url);
-		if (!fs.existsSync(`./tiles/${x}/${y}`))
-			fs.mkdirSync(`./tiles/${x}/${y}`, { recursive: true });
-		fs.writeFileSync(`./tiles/${x}/${y}.png`, fullImage);
-		let imageArray = []; // array of cropped images
-		for (let i = 0; i < gridSize; i++) {
-			for (let j = 0; j < gridSize; j++) {
-				const croppedBuffer = await cropImage(fullImage, i * tilesize, j * tilesize, tilesize, tilesize);
-				fs.writeFileSync(`./tiles/${x}/${y}/${i}-${j}.png`, croppedBuffer);
-				imageArray.push(croppedBuffer);
+		res.set('Content-Type', `image/${format}`);
+		if (!imgHashMap[`${x}-${y}`]) { // if the image is not already in the hashmap (i.e. not cached)
+			const fullImage = await fetchImage(url);
+			// if (!fs.existsSync(`./tiles/`))
+			// 	fs.mkdirSync(`./tiles/`, { recursive: true });
+			// fs.writeFileSync(`./tiles/BIG-${x}-${y}.png`, fullImage);
+			for (let i = 0; i < gridSize; i++) {
+				for (let j = 0; j < gridSize; j++) {
+					const croppedBuffer = await cropImage(fullImage, i * tilesize, j * tilesize, tilesize, tilesize);
+					// fs.writeFileSync(`./tiles/${x - extra + i}-${y - extra + j}.png`, croppedBuffer);
+					imgHashMap[`${x - extra + i}-${y - extra + j}`] = croppedBuffer;
+				}
 			}
 		}
 		res.set('Content-Type', `image/${format}`);
-		res.send(imageArray[parseInt((gridSize * gridSize) / 2) + 1]);
+		res.send(imgHashMap[`${x}-${y}`]);
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).send('Error fetching image: ' + error.message);
