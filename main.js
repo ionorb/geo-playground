@@ -91,6 +91,30 @@ var michelinRasterStyle = {
 	"glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf", // You can use any public or self-hosted glyph endpoint
 };
 
+var michelinConvertedRasterStyle = {
+	"version": 8,
+	"name": "Michelin Converted Raster Style",
+	"sources": {
+		"michelinRaster": {
+			"type": "raster",
+			"tiles": [
+				"http://localhost:3001/styles/michelin/{z}/{x}/{y}.png"
+			],
+			"tileSize": 256
+		}
+	},
+	"layers": [
+		{
+			"id": "michelin-raster",
+			"source": "michelinRaster",
+			// "source-layer": "contries",
+			"type": "raster",
+			// "paint": {"line-color": "#198EC8"}
+		}
+	],
+	"glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf", // You can use any public or self-hosted glyph endpoint
+};
+
 const paris = [2.3504, 48.8417];
 
 var radioOptions = document.createElement('div');
@@ -103,6 +127,8 @@ radioOptions.innerHTML = `
 	<label for="michelin">Michelin</label>
 	<input type="radio" id="michelin-raster" name="style" value="michelin-raster">
 	<label for="michelin-raster">Michelin Raster</label>
+	<input type="radio" id="michelin-converted-raster" name="style" value="michelin-converted-raster">
+	<label for="michelin-converted-raster">Michelin Converted Raster</label>
 `;
 
 radioOptions.onchange = function() {
@@ -115,6 +141,8 @@ radioOptions.onchange = function() {
 		map.setStyle(michelinVectorStyle);
 	} else if (selectedStyle === 'michelin-raster') {
 		map.setStyle(michelinRasterStyle);
+	} else if (selectedStyle === 'michelin-converted-raster') {
+		map.setStyle(michelinConvertedRasterStyle);
 	}
 }
 

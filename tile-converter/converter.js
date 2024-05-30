@@ -2,6 +2,13 @@ const express = require('express');
 const axios = require('axios');
 const app = express();
 const port = 3001;
+const cors = require("cors");
+
+const corsOptions = {
+  origin: "*"
+};
+
+app.use(cors(corsOptions));
 
 // conversion functions from openstreetmap wiki page:
 function tile2long(x,z) {
