@@ -98,7 +98,7 @@ var michelinConvertedRasterStyle = {
 		"michelinRaster": {
 			"type": "raster",
 			"tiles": [
-				"http://localhost:3001/styles/michelin/{z}/{x}/{y}.png"
+				"http://localhost:3001/styles/michelin/256/1/{z}/{x}/{y}.png"
 			],
 			"tileSize": 256
 		}
