@@ -1,31 +1,31 @@
 services:
-  # vite-app:
-  #   container_name: vite-app
-  #   image: node:20-alpine  # Using Node.js version 20 for better ES module support
-  #   working_dir: /app
-  #   volumes:
-  #     - .:/app
-  #   ports:
-  #     - "5173:5173"
-  #   networks:
-  #     - internal
-  #   # environment:
-  #   #   - NODE_ENV=development
-  #   command: sh -c "npm install && npm run dev"
-  #   stdin_open: true
-  #   tty: true
+  vite-app:
+    container_name: vite-app
+    image: node:20-alpine  # Using Node.js version 20 for better ES module support
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "5173:5173"
+    networks:
+      - internal
+    # environment:
+    #   - NODE_ENV=development
+    command: sh -c "npm install && npm run dev"
+    stdin_open: true
+    tty: true
 
-  # tile-converter:
-  #   container_name: tile-converter
-  #   image: node:20-alpine
-  #   working_dir: /app
-  #   volumes:
-  #     - ./tile-converter:/app
-  #   ports:
-  #     - "3001:3001"
-  #   command: sh -c "npm install && npm run start"
-  #   networks:
-  #     - internal
+  tile-converter:
+    container_name: tile-converter
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./tile-converter:/app
+    ports:
+      - "3001:3001"
+    command: sh -c "npm install && npm run start"
+    networks:
+      - internal
 
   tileserver-gl:
     container_name: tileserver-gl

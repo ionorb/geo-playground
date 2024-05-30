@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker compose up --build & npm install & npm run dev && fg;
+docker compose up --build

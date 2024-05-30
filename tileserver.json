@@ -22,7 +22,7 @@
 	  "serveStaticMaps": true,
 	  "allowRemoteMarkerIcons": true,
 	  "allowInlineMarkerImages": true,
-	  "tileMargin": 256
+	  "tileMargin": 512
 	},
 	"styles": {
 	  "fancy": {

@@ -91,47 +91,7 @@ var michelinRasterStyle = {
 	"glyphs": "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf", // You can use any public or self-hosted glyph endpoint
 };
 
-// fancyStyle.sources['world-cities'] = {
-// 	type: 'vector',
-// 	tiles: citiesConfig.tiles,
-// 	bounds: citiesConfig.bounds,
-// 	minzoom: citiesConfig.minzoom,
-// 	maxzoom: citiesConfig.maxzoom
-// };
-
-// citiesConfig.vector_layers.forEach(function(layer) {
-// 	fancyStyle.layers.push({
-// 		id: layer.id + '-layer',
-// 		type: 'circle',
-// 		source: 'world-cities',
-// 		'source-layer': layer.id,
-// 		paint: {
-// 			'circle-radius': 6,
-// 			'circle-color': '#007cbf'
-// 		},
-// 	});
-// });
-
-// basicStyle.sources['world-cities'] = {
-// 	type: 'vector',
-// 	tiles: citiesConfig.tiles,
-// 	bounds: citiesConfig.bounds,
-// 	minzoom: citiesConfig.minzoom,
-// 	maxzoom: citiesConfig.maxzoom
-// };
-
-// citiesConfig.vector_layers.forEach(function(layer) {
-// 	basicStyle.layers.push({
-// 		id: layer.id + '-layer',
-// 		type: 'circle',
-// 		source: 'world-cities',
-// 		'source-layer': layer.id,
-// 		paint: {
-// 			'circle-radius': 6,
-// 			'circle-color': '#007cbf'
-// 		},
-// 	});
-// });
+const paris = [2.3504, 48.8417];
 
 var radioOptions = document.createElement('div');
 radioOptions.innerHTML = `
@@ -160,16 +120,27 @@ radioOptions.onchange = function() {
 
 document.getElementById('extra').appendChild(radioOptions);
 
-var mapContainer = document.getElementById('map');
-mapContainer.style.height = '500px';//window.innerHeight - 50 + 'px';
+var goToParis = document.createElement('button');
+goToParis.innerHTML = 'Go to Paris';
+goToParis.onclick = function() {
+	map.flyTo({
+		center: paris,
+		zoom: 10
+	});
+};
 
-var leafletContainer = document.getElementById('leaflet-map');
-leafletContainer.style.height = '500px';//window.innerHeight - 50 + 'px';
+document.getElementById('extra').appendChild(goToParis);
+
+var mapContainer = document.getElementById('map');
+mapContainer.style.height = window.innerHeight - 50 + 'px';
+
+// var leafletContainer = document.getElementById('leaflet-map');
+// leafletContainer.style.height = '500px';//window.innerHeight - 50 + 'px';
 
 var map = new maplibregl.Map({
 	container: 'map', // container id
 	style: basicStyle, // style URL
-	center: [2.609167, 48.811111], // starting position [lng, lat]
+	center: paris, // starting position [lng, lat]
 	zoom: 10 // starting zoom
 });
 
@@ -178,10 +149,35 @@ map.showTileBoundaries = true;
 // var leafletMap = L.map('leaflet-map').setView([51.505, -0.09], 13);
 
 // // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-// L.tileLayer('http://localhost:8080/styles/michelin/{z}/{x}/{y}.png', {
+// L.tileLayer('http://localhost:3001/styles/michelin/{z}/{x}/{y}.png', {
 // 	maxZoom: 19,
 // 	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 // }).addTo(leafletMap);
+
+// L.GridLayer.GridDebug = L.GridLayer.extend({
+// 	createTile: function (coords) {
+// 		const tile = document.createElement('div');
+// 		tile.style.outline = '1px solid green';
+// 		tile.style.fontWeight = 'bold';
+// 		tile.style.fontSize = '14pt';
+// 		tile.innerHTML = [coords.z, coords.x, coords.y].join('/');
+// 		return tile;
+// 	},
+// });
+
+// L.gridLayer.gridDebug = function (opts) {
+// 	return new L.GridLayer.GridDebug(opts);
+// };
+
+// leafletMap.addLayer(L.gridLayer.gridDebug());
+
+// var reset = document.createElement('button');
+// reset.innerHTML = 'Reset';
+// reset.onclick = function() {
+// 	leafletMap.setView([48.811111, 2.609167], 10);
+// };
+
+// document.getElementById('extra').appendChild(reset);
 
 // map.on('load', function() {
 // 	map.addSource('world-cities', {
