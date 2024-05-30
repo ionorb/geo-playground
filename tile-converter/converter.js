@@ -5,6 +5,7 @@ const app = express();
 const port = 3001;
 const cors = require("cors");
 const fs = require('fs');
+const { parse } = require('path');
 
 const corsOptions = {
 	origin: "*"
@@ -42,34 +43,47 @@ function cropImage(imageBuffer, leftOffset, topOffset, width, height) {
 		.toBuffer();
 }
 
-async function fetchAndCropImage(url, outputPath, cropOptions) {
+async function fetchImage(url, outputPath, cropOptions) {
 	const response = await axios({
 		url,
 		responseType: 'arraybuffer'
 	});
 
-	const imageBuffer = Buffer.from(response.data);
-
-	const croppedBuffer = await cropImage(imageBuffer, cropOptions.left, cropOptions.top, cropOptions.width, cropOptions.height);
-	fs.writeFileSync(outputPath, croppedBuffer);
-	return croppedBuffer;
+	return Buffer.from(response.data);
 }
 
 // fetchAndCropImage('http://example.com/image.jpg', 'cropped.jpg', { left: 50, top: 50, width: 200, height: 200 });
 
 app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
-	const { id, tilesize, extra, z, x, y } = req.params;
-	const size = parseInt(tilesize) * 2 * parseInt(extra) + parseInt(tilesize);
-	const { lon, lat, zoom, width, height } = determineParameters(size, parseInt(z), parseFloat(x), parseFloat(y));
+	let { id, tilesize, extra, z, x, y } = req.params;
+	tilesize = parseInt(tilesize);
+	extra = parseInt(extra);
+	z = parseInt(z);
+	x = parseFloat(x);
+	y = parseFloat(y);
+	const gridSize = 2 * extra + 1; // number of tiles in each direction
+	const size = gridSize * tilesize; // size of the full image (in pixels)
+	const { lon, lat, zoom, width, height } = determineParameters(size, z, x, y);
 
 	console.log(lat, lon);
 
 	try {
 		const format = 'png';
-		const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}@2x.${format}`;
-		const cropped = await fetchAndCropImage(url, 'cropped.png', { left: 0, top: 0, width: size, height: size });
+		const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
+		const fullImage = await fetchImage(url);
+		if (!fs.existsSync(`./tiles/${x}/${y}`))
+			fs.mkdirSync(`./tiles/${x}/${y}`, { recursive: true });
+		fs.writeFileSync(`./tiles/${x}/${y}.png`, fullImage);
+		let imageArray = []; // array of cropped images
+		for (let i = 0; i < gridSize; i++) {
+			for (let j = 0; j < gridSize; j++) {
+				const croppedBuffer = await cropImage(fullImage, i * tilesize, j * tilesize, tilesize, tilesize);
+				fs.writeFileSync(`./tiles/${x}/${y}/${i}-${j}.png`, croppedBuffer);
+				imageArray.push(croppedBuffer);
+			}
+		}
 		res.set('Content-Type', `image/${format}`);
-		res.send(cropped);
+		res.send(imageArray[parseInt((gridSize * gridSize) / 2) + 1]);
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).send('Error fetching image: ' + error.message);
