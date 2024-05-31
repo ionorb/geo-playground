@@ -15,12 +15,12 @@ app.use(cors(corsOptions));
 
 // conversion functions from openstreetmap wiki page:
 function tile2long(x,z) {
-	console.log(x, z);
+	// console.log(x, z);
 	return (x/Math.pow(2,z)*360-180);
 }
 
 function tile2lat(y,z) {
-	console.log(y, z);
+	// console.log(y, z);
 	var n=Math.PI-2*Math.PI*y/Math.pow(2,z);
 	return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
 }
@@ -67,7 +67,7 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
 	const size = gridSize * tilesize; // size of the full image (in pixels)
 	const { lon, lat, zoom, width, height } = determineParameters(size, z, x, y);
 
-	console.log(lat, lon);
+	// console.log(lat, lon);
 
 	try {
 		const format = 'png';
