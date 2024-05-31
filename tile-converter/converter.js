@@ -6,6 +6,7 @@ const port = 3001;
 const cors = require("cors");
 const fs = require('fs');
 const { parse } = require('path');
+const e = require('express');
 
 const corsOptions = {
 	origin: "*"
@@ -56,8 +57,8 @@ async function fetchImage(url, outputPath, cropOptions) {
 
 const imgHashMap = {}; // key: x-y, value: imageBuffer - to store the cropped images
 
-app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
-	let { id, tilesize, extra, z, x, y } = req.params;
+app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.:format', async (req, res) => {
+	let { id, tilesize, extra, z, x, y, format } = req.params;
 	tilesize = parseInt(tilesize);
 	extra = parseInt(extra);
 	z = parseInt(z);
@@ -65,15 +66,17 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
 	y = parseFloat(y);
 	const gridSize = 2 * extra + 1; // number of tiles in each direction
 	const size = gridSize * tilesize; // size of the full image (in pixels)
-	const { lon, lat, zoom, width, height } = determineParameters(size, z, x, y);
-
+	
 	// console.log(lat, lon);
-
+	
 	try {
-		const format = 'png';
-		const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
 		res.set('Content-Type', `image/${format}`);
 		if (!imgHashMap[`${x}-${y}`]) { // if the image is not already in the hashmap (i.e. not cached)
+			let x2 = x + x % gridSize;
+			let y2 = y + y % gridSize;
+			const { lon, lat, zoom, width, height } = determineParameters(size, z, x2, y2);
+			const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
+			
 			const fullImage = await fetchImage(url);
 			// if (!fs.existsSync(`./tiles/`))
 			// 	fs.mkdirSync(`./tiles/`, { recursive: true });
@@ -82,7 +85,7 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.png', async (req, res) => {
 				for (let j = 0; j < gridSize; j++) {
 					const croppedBuffer = await cropImage(fullImage, i * tilesize, j * tilesize, tilesize, tilesize);
 					// fs.writeFileSync(`./tiles/${x - extra + i}-${y - extra + j}.png`, croppedBuffer);
-					imgHashMap[`${x - extra + i}-${y - extra + j}`] = croppedBuffer;
+					imgHashMap[`${x2 - extra + i}-${y2 - extra + j}`] = croppedBuffer;
 				}
 			}
 		}
