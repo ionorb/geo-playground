@@ -74,7 +74,7 @@ var michelinRasterStyle = {
 		"michelinRaster": {
 			"type": "raster",
 			"tiles": [
-				"http://localhost:8080/styles/michelin/{z}/{x}/{y}@2x.png"
+				"http://localhost:8080/styles/michelin/{z}/{x}/{y}.png"
 			],
 			"tileSize": 256
 		}
