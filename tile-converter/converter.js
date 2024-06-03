@@ -21,10 +21,10 @@ async function editPixelsAndReturnBuffer(inputBuffer) {
 		.toBuffer({ resolveWithObject: true });
 
 	const { width, height, channels } = info;
-	console.log(width, height, channels);
+	// console.log(width, height, channels);
 
 	// Modify the pixel data
-	let lineThickness = 160;
+	let lineThickness = 16;
 
 	for (let i = 0; i < data.length; i += channels) {
 		// Draw a border around the image
@@ -59,45 +59,6 @@ async function editPixelsAndReturnBuffer(inputBuffer) {
 
 	return outputBuffer; // Convert Node.js Buffer to ArrayBuffer
 }
-	
-// 	// Load the image from the ArrayBuffer
-// 	const image = await loadImage(arrayBuffer);
-
-// 	// Create a canvas and get the context
-// 	const canvas = createCanvas(image.width, image.height);
-// 	const ctx = canvas.getContext('2d');
-
-// 	// Draw the image onto the canvas
-// 	ctx.drawImage(image, 0, 0);
-
-// 	// Get the ImageData
-// 	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-// 	const data = imageData.data;
-
-// 	// Modify the image data (example: invert colors)
-// 	for (let i = 0; i < data.length; i += 4) {
-// 		data[i] = 255 - data[i];       // Red
-// 		data[i + 1] = 255 - data[i + 1]; // Green
-// 		data[i + 2] = 255 - data[i + 2]; // Blue
-// 		// data[i + 3] is the alpha component (not modified)
-// 	}
-
-// 	// Put the modified data back onto the canvas
-// 	ctx.putImageData(imageData, 0, 0);
-
-// 	// Return the modified image as ArrayBuffer
-// 	return canvas.toBuffer('image/png').buffer;
-// }
-
-// // Helper function to convert ArrayBuffer to Buffer for loadImage
-// function loadImage(arrayBuffer) {
-// 	return new Promise((resolve, reject) => {
-// 		const img = new Image();
-// 		img.onload = () => resolve(img);
-// 		img.onerror = (err) => reject(err);
-// 		img.src = Buffer.from(arrayBuffer);
-// 	});
-// }
 
 const corsOptions = {
 	origin: "*"
@@ -136,17 +97,16 @@ async function fetchImage(url, outputPath, cropOptions) {
 	return Buffer.from(response.data);
 }
 
-// fetchAndCropImage('http://example.com/image.jpg', 'cropped.jpg', { left: 50, top: 50, width: 200, height: 200 });
-
 const imgHashMap = {}; // key: x-y, value: imageBuffer - to store the cropped images
+const ongoingRequests = {}; // key: x-y, value: promise - to store the ongoing requests
 
 app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.:format', async (req, res) => {
-	let { id, tilesize, extra, z, x, y, format } = req.params;
+	let { id, tilesize, extra, z, x: tileX, y: tileY, format } = req.params;
 	tilesize = parseInt(tilesize);
 	extra = parseInt(extra);
 	z = parseInt(z);
-	x = parseFloat(x);
-	y = parseFloat(y);
+	tileX = parseFloat(tileX);
+	tileY = parseFloat(tileY);
 	const gridSize = 2 * extra + 1; // number of tiles in each direction
 	const size = gridSize * tilesize; // size of the full image (in pixels)
 	
@@ -161,29 +121,37 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.:format', async (req, res) => {
 		return newCoord;
 	}
 
-	try {
-		res.set('Content-Type', `image/${format}`);
-		if (!imgHashMap[`${x}-${y}`]) { // if the image is not already in the hashmap (i.e. not cached)
-			const x2 = getMetaTileCoord(x, gridSize);
-			const y2 = getMetaTileCoord(y, gridSize);
-			const { lon, lat, zoom, width, height } = determineParameters(size, z, x2, y2);
-			const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
-			
-			let fullImage = await fetchImage(url);
-			let editFullImage = await editPixelsAndReturnBuffer(fullImage);
-			// if (!fs.existsSync(`./tiles/`))
-			// 	fs.mkdirSync(`./tiles/`, { recursive: true });
-			// fs.writeFileSync(`./tiles/${x}-${y}.png`, editFullImage);
-			for (let i = 0; i < gridSize; i++) {
-				for (let j = 0; j < gridSize; j++) {
-					let croppedBuffer = await cropImage(editFullImage, i * tilesize, j * tilesize, tilesize, tilesize);
-					// fs.writeFileSync(`./tiles/${x - extra + i}-${y - extra + j}.png`, croppedBuffer);
-					imgHashMap[`${x2 - extra + i}-${y2 - extra + j}`] = croppedBuffer;
-				}
+	async function fetchMetaTile(url, metaX, metaY, gridSize) {
+		let fullImage = await fetchImage(url);
+		fullImage = await editPixelsAndReturnBuffer(fullImage);
+		// if (!fs.existsSync(`./tiles/`))
+		// 	fs.mkdirSync(`./tiles/`, { recursive: true });
+		// fs.writeFileSync(`./tiles/${x}-${y}.png`, editFullImage);
+		for (let i = 0; i < gridSize; i++) {
+			for (let j = 0; j < gridSize; j++) {
+				let croppedBuffer = await cropImage(fullImage, i * tilesize, j * tilesize, tilesize, tilesize);
+				// fs.writeFileSync(`./tiles/${x - extra + i}-${y - extra + j}.png`, croppedBuffer);
+				const { tileX, tileY } = { tileX: metaX - extra + i, tileY: metaY - extra + j };
+				imgHashMap[`${tileX}-${tileY}`] = croppedBuffer;
 			}
 		}
+		delete ongoingRequests[`${metaX}-${metaY}`];
+	}
+
+	try {
 		res.set('Content-Type', `image/${format}`);
-		res.send(imgHashMap[`${x}-${y}`]);
+		if (!imgHashMap[`${tileX}-${tileY}`]) { // if the image is not already in the hashmap (i.e. not cached)
+			const metaX = getMetaTileCoord(tileX, gridSize);
+			const metaY = getMetaTileCoord(tileY, gridSize);
+			const { lon, lat, zoom, width, height } = determineParameters(size, z, metaX, metaY);
+			const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
+			if (!ongoingRequests[`${metaX}-${metaY}`]) { // if the request is not already ongoing
+				ongoingRequests[`${metaX}-${metaY}`] = fetchMetaTile(url, metaX, metaY, gridSize);
+			}
+			await ongoingRequests[`${metaX}-${metaY}`];
+		}
+		res.set('Content-Type', `image/${format}`);
+		res.send(imgHashMap[`${tileX}-${tileY}`]);
 	} catch (error) {
 		console.error(error.message);
 		res.status(500).send('Error fetching image: ' + error.message);
