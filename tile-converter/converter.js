@@ -4,7 +4,7 @@ const sharp = require('sharp');
 const app = express();
 const port = 3001;
 const cors = require("cors");
-// const fs = require('fs');
+const fs = require('fs');
 // const { parse } = require('path');
 // const e = require('express');
 // const { KeyObject } = require('crypto');
@@ -24,8 +24,21 @@ async function editPixelsAndReturnBuffer(inputBuffer) {
 	console.log(width, height, channels);
 
 	// Modify the pixel data
+	let lineThickness = 160;
+
 	for (let i = 0; i < data.length; i += channels) {
-		if (i % (width * channels) > (width * channels) - 4 || i % (width * channels) < 4) {
+		// Draw a border around the image
+
+		// Draw left and right borders
+		if (i % (width * channels) > (width * channels) - lineThickness * channels - channels * 2 || i % (width * channels) < lineThickness * channels) {
+			// console.log("i: ", i, "i % (width * channels): ", i % (width * channels));
+			data[i] = 0;    // Red channel
+			data[i + 1] = 0; // Green channel
+			data[i + 2] = 255; // Blue channel
+		}
+
+		// Draw top and bottom borders
+		if (Math.floor(i / (width * channels)) < lineThickness || Math.floor(i / (width * channels)) > height - lineThickness) {
 			data[i] = 0;    // Red channel
 			data[i + 1] = 0; // Green channel
 			data[i + 2] = 255; // Blue channel
@@ -44,7 +57,7 @@ async function editPixelsAndReturnBuffer(inputBuffer) {
 		.toFormat('png')
 		.toBuffer();
 
-	return outputBuffer.buffer; // Convert Node.js Buffer to ArrayBuffer
+	return outputBuffer; // Convert Node.js Buffer to ArrayBuffer
 }
 	
 // 	// Load the image from the ArrayBuffer
@@ -139,18 +152,20 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.:format', async (req, res) => {
 	
 	// console.log(lat, lon);
 	
+	function getMetaTileCoord(coord, gridSize) {
+		let newCoord = coord;
+		if (coord % gridSize <= parseInt(gridSize / 2))
+			newCoord = coord - (coord % gridSize);
+		else
+			newCoord = coord + (gridSize - coord % gridSize);
+		return newCoord;
+	}
+
 	try {
 		res.set('Content-Type', `image/${format}`);
 		if (!imgHashMap[`${x}-${y}`]) { // if the image is not already in the hashmap (i.e. not cached)
-			let x2 = x, y2 = y;
-			if ((x + extra) % gridSize === 0)
-				x2 = x + extra;
-			if ((y + extra) % gridSize === 0)
-				y2 = y + extra;
-			if ((x - extra) % gridSize === 0)
-				x2 = x - extra;
-			if ((y - extra) % gridSize === 0)
-				y2 = y - extra;
+			const x2 = getMetaTileCoord(x, gridSize);
+			const y2 = getMetaTileCoord(y, gridSize);
 			const { lon, lat, zoom, width, height } = determineParameters(size, z, x2, y2);
 			const url = `http://tileserver-gl:8080/styles/${id}/static/${lon},${lat},${zoom}/${width}x${height}.${format}`;
 			
@@ -158,7 +173,7 @@ app.get('/styles/:id/:tilesize/:extra/:z/:x/:y.:format', async (req, res) => {
 			let editFullImage = await editPixelsAndReturnBuffer(fullImage);
 			// if (!fs.existsSync(`./tiles/`))
 			// 	fs.mkdirSync(`./tiles/`, { recursive: true });
-			// fs.writeFileSync(`./tiles/BIG-${x}-${y}.png`, fullImage);
+			// fs.writeFileSync(`./tiles/${x}-${y}.png`, editFullImage);
 			for (let i = 0; i < gridSize; i++) {
 				for (let j = 0; j < gridSize; j++) {
 					let croppedBuffer = await cropImage(editFullImage, i * tilesize, j * tilesize, tilesize, tilesize);
